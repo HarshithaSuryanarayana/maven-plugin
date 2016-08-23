@@ -1,0 +1,5 @@
+<checks>
+        <check groupId="com.sap.prd.mobile.ios.mios" artifactId="" version="0.0.1-SNAPSHOT"  severity="WARNING"
+               class="com.sap.prd.mobile.ios.mios.verification.AppStoreMetadataCheck"/>
+
+</checks>

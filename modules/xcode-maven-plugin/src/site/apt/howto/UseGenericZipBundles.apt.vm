@@ -1,0 +1,170 @@
+~~~
+~~ #%L
+~~ xcode-maven-plugin
+~~ %%
+~~ Copyright (C) 2012 SAP AG
+~~ %%
+~~ Licensed under the Apache License, Version 2.0 (the "License");
+~~ you may not use this file except in compliance with the License.
+~~ You may obtain a copy of the License at
+~~ 
+~~      http://www.apache.org/licenses/LICENSE-2.0
+~~ 
+~~ Unless required by applicable law or agreed to in writing, software
+~~ distributed under the License is distributed on an "AS IS" BASIS,
+~~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+~~ See the License for the specific language governing permissions and
+~~ limitations under the License.
+~~ #L%
+~~~
+ 
+ ------
+ Usage
+ ------
+ ------
+ 2012-11-28
+ ------
+
+How to use generic ZIP bundles
+
+* Motivation
+
+    The need is to consume content of a dedicated type provided as binary content in a maven repository. 
+    An example for this might be to consume java script files, technically provided as a zip archive.
+    In such as a scenario, consuming a dedicated archive might require to also consume archives or content 
+    required by the directly consumed component. For example, java script files might use other java script classes, 
+    contained in a dependent component. Here it is extremely useful to get all the dependent content just by 
+    establishing a dependency to the initially desired component. The know-how about the further dependent 
+    stuff is typically only available at the directly consumed component. 
+    It should be urgently avoided to force consumers to know about internal dependencies.
+
+    In Maven dependencies are declared with a specific type. This type is mapped to a technical artifact suffix.
+    By default, type and suffix are identical - for example, a zip dependency is mapped to a .zip artifact. 
+    The definition of such a type additionally allows to declare the usage of a transitive dependency resolution. 
+    For example, there is a type "js" that is mapped to the suffix .zip and declares such a transitive resolution. 
+    As a result referring to an "js" artifact means to resolve the .zip file of the directly addressed maven coordinates 
+    including all js dependencies, declared by this component.
+
+    Such a type definition is defined in a components.xml that typically comes with a maven plugin.
+
+* Consuming (transitive) archive dependencies
+
+    [[1]] Provide a maven plugin for the desired type.
+
+    How artifacts should be handled is described by an artifact handler defined inside the components.xml of a maven plugin.
+
+    There are two properites that are important for our use case.
+
+        [[a]] <<extension>>. The extension defines the file appendix that represents the main artifact of the corresponding type.
+
+        [[a]] <<includesDependencies>>. Defines whether or not an artifact of the corresponding type includes its dependencies. 
+            This property needs to be set to <<<false>>> if transitive dependencies should be resolved.
+
+    The components.xml file looks typically like this:
+
++-------------
+<component-set>
+  <components>
+    <component>
+      <role>org.apache.maven.artifact.handler.ArtifactHandler</role>
+      <role-hint>js</role-hint> <!-- The type of the dependency as used inside the dependency section -->
+      <implementation>org.apache.maven.artifact.handler.DefaultArtifactHandler</implementation>
+      <configuration>
+        <extension>zip</extension> <!-- The file extension of the main artifact. -->
+        <language>java-script</language>
+        <addedToClasspath>false</addedToClasspath>
+        <includesDependencies>false</includesDependencies> <!-- Describes whether or not this artifact contains it dependencies. -->
+      </configuration>
+    </component>
+  </components>
+</component-set>
++-------------
+
+
+    [[1]] The plugin described in the last section needs to be incorporated into the pom of the project that makes use of the
+          dependency resolution for additional (transitive) archives.
+
++-------------
+<build>
+[...]
+  <plugins>
+  [...]
+    <plugin>
+      <groupId>THE_GROUP_ID</groupId>
+      <artifactId>THE_ARTIFACT_ID</artifactId>
+      <version>THE_VERSION</version>
+      <extensions>true</extensions> <!-- Important. If not present the artifact handler 
+                                         defined in the components.xml is not taken into account -->
+    </plugin>
+  [...]    
+  </plugins>
+</build>
+[...]
++-------------
+
+    [[1]] Configure the way you want to consume the archive component. The way how a dependency type is handled is
+          defined inside the configuration section of the xcode-maven-plugin. Within the tag <<<additionalPackagingTypes>>>
+          the packaging type is mapped to a usage type:
+
++-------------
+     <build>
+        <plugins>
+            <plugin>
+                <groupId>com.sap.prd.mobile.ios.mios</groupId>
+                <artifactId>xcode-maven-plugin</artifactId>
+                <version>${project.version}</version>
+                <configuration>
+                    <additionalPackagingTypes>
+                        <js>USAGE_TYPE</js>
+                    </additionalPackagingTypes>
+                </configuration>
+                <extensions>true</extensions>
+            </plugin>
+            .....
+        </plugins>
+    </build>
++-------------
+
+    USAGE_TYPE could be as follows:
+
+        [[I]] COPY - the archive component will be copied locally after resolving the dependency.
+
+        [[I]] UNPACK - the archive component will be unpacked locally after resolving the dependency.
+
+        [[I]] BUNDLE - the archive component will be unpacked and represented as Bundle after resolving the dependency.
+
+
+    [[1]] Add a dependency to the archive component you want to use into the dependencies section in your pom.xml.
+
+    Example:
+
++-------------
+<dependencies>
+  <dependency>
+    <groupId>GROUP_ID</groupId>
+    <artifactId>ARTIFACT_ID</artifactId>
+    <version>VERSION</version>
+    <type>js</type> <!-- The type is defined here -->
+  </dependency>
+</dependencies>
++-------------
+
+    ** Download the archive dependency locally
+
+    Open a Terminal and go to the folder containing the pom.xml of your project.
+    Run the following command:
+    <<<mvn initialize>>>
+
+    ** Result
+    As a result of the above command execution, you will get a folder named <<<target/xcode-deps/<type> >>> into your project, 
+    where the dependent archive component will be downloaded and processed according to the usage type you have defined.
+
+
+  For
+
+    *** <<COPY>> The archive is copied into <<<target/xcode-deps/<type> >>> "as it".
+ 
+    *** <<UNPACK>> The archive is unpacked into <<<target/xcode-deps/<type> >>>
+
+    *** <<BUNDLE>> The archive is unpacked into <<<target/xcode-deps/<type>/<artifactId>.bundle >>>. By convention folders with suffix ".bundle" are displayed as bundles.
+

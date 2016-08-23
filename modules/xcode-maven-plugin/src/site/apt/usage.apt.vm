@@ -1,0 +1,233 @@
+ ------
+ Usage
+ ------
+ ------
+ 2012-05-21
+ ------
+ 
+Usage
+ 
+  The Xcode plugin binds itself to the Maven build cycles based on the packaging you have provided in your pom. 
+ 
+%{toc|section=1|fromDepth=2|toDepth=3}
+
+
+* Configuration Parameters
+  
+  The Xcode Maven plugin modifies the Maven build lifecycle and executes a couple of {{{./plugin-info.html}goals}}. This
+  section lists the most important configuration possibilities for lib and app builds as it is cumbersome to collect
+  them from the individual goals.
+  
+  Here is a list of the most important parameters:
+  
+    * {{{./xcodebuild-mojo.html#configurations}configurations}}
+      
+    * {{{./xcodebuild-mojo.html#defaultAppConfigurations}defaultAppConfigurations}}
+      
+    * {{{./xcodebuild-mojo.html#defaultLibConfigurations}defaultLibConfigurations}}
+    
+    * {{{./xcodebuild-mojo.html#sdks}sdks}}
+    
+    * {{{./xcodebuild-mojo.html#defaultAppSdks}defaultAppSdks}}
+    
+    * {{{./xcodebuild-mojo.html#defaultLibSdks}defaultLibSdks}}
+     
+    * {{{./xcodebuild-mojo.html#buildActions}buildActions}}
+ 
+    * {{{./xcodebuild-mojo.html#target}target}}
+ 
+    * {{{./xcodebuild-mojo.html#codeSignIdentity}codeSignIdentity}}
+
+    * {{{./xcodebuild-mojo.html#provisioningProfile}provisioningProfile}}
+    
+    * {{{./change-app-id-mojo.html#appIdSuffix}appIdSuffix}}
+ 
+    * {{{./change-artifact-id-mojo#artifactIdSuffix}artifactIdSuffix}}
+ 
+
+  Example of a <<<pom.xml>>> that provides the above mentioned parameters:
+  
++-------------
+
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0  http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>my.package</groupId>
+  <artifactId>MyLibrary</artifactId>
+  <version>1.0-SNAPSHOT</version>
+  <packaging>xcode-lib</packaging>
+
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>com.sap.prd.mobile.ios.mios</groupId>
+        <artifactId>xcode-maven-plugin</artifactId>
+        <version>${project.version}</version>
+        <extensions>true</extensions>
+        <configuration>
+          <configurations>
+            <configuration>Debug</configuration>
+            <configuration>Release</configuration>
+          </configurations>
+          <defaultAppConfigurations>Release,Debug</defaultAppConfigurations>  <!-- If <configurations> are explicitly provided this
+                                                                                   property has no effect. Can also be set via
+                                                                                   system property: ${xcode.app.defaultConfigurations} -->
+          <defaultLibConfigurations>Release,Debug</defaultLibConfigurations>  <!-- If <configurations> are explicitly provided this
+                                                                                   property has no effect. Can also be set via  
+                                                                                   system property: ${xcode.lib.defaultConfigurations} -->
+          <sdks>
+            <sdk>iphonesimulator</sdk>
+            <sdk>iphoneos</sdk>
+          </sdks>
+          <defaultAppSdks>iphoneos,iphonesimulator</defaultAppSdks>  <!-- if <sdks> are explicitly provided this property has no effect. 
+                                                                          Can also be set via system property: ${xcode.app.defaultSdks} -->
+          <defaultLibSdks>iphoneos,iphonesimulator</defaultLibSdks>  <!-- if <sdks> are explicitly provided this property has no effect. 
+                                                                          Can also be set via system property: ${xcode.lib.defaultSdks} -->          
+          <buildActions>
+            <buildAction>clean</buildAction>
+            <buildAction>build</buildAction>
+          </buildActions>
+          <target>mySpecificXcodeTargetName</target>                  <!-- Can also be set via system property: ${xcode.target} -->
+          <codeSignIdentity>iPhone Developer</codeSignIdentity>       <!-- Can also be set via system property: ${xcode.codeSignIdentity} -->
+          <provisioningProfile>42CB38B0-62BB-4242-BD03-72EDB7570842</provisioningProfile> <!-- Can also be set via system property: ${xcode.provisioningProfile} -->
+          <appIdSuffix>internal</appIdSuffix>                         <!-- Can also be set via system property: ${xcode.appIdSuffix} -->
+          <artifactIdSuffix>release</artifactIdSuffix>                <!-- Can also be set via system property: ${xcode.artifactIdSuffix} -->
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>
+
++-------------
+  
+
+
+
+* Directory Layout
+
+  The following directory layout is expected for your Xcode sources. Please note that the directories can be overridden 
+  e.g. by the <<<xcodeCompileDirectory>>> configuration.
+  
+  <<Note:>> Currently the plugin expects that your Xcode project is configured to place your build results into a <<<build>>>
+  folder that resides on the same level as your <<<.xcodeproj>>> file.
+  
++-----------
+|-- project-root
+      |-- pom.xml                               The project pom xml.
+      |
+      |-- <MavenModule1Root>
+      |  |-- pom.xml                            The module pom.
+      |  |-- src
+      |     |-- xcode                           The "xcode" folder contains the whole XCode project. Copy your project there.
+      |           |-- <sources>, ...
+      |           |-- MyNewProject.xcodeproj
+      |           |-- MyNewProjectTests
+      |               |-- <test sources>, ...
+      |
+      |
+      |-- <MavenModule2Root>
+      |  |-- pom.xml                            The module pom.
+      |  |-- src
+      |     |-- xcode                           The "xcode" folder contains the whole XCode project. Copy your project there.
+      |           |-- <sources>, ...
+      |           |-- MyNewProject2.xcodeproj
+      |           |-- MyNewProjectTests2
+      |               |-- <test sources>, ...
++-----------  
+  
+
+* Building a Library
+
+  Here is an example how to build a library: {{{./examples/LibBuildExample.html}Example of a Library build}}
+
+
+* Building a Framework
+
+  Here is an example how to build a framework: {{{./examples/FmwkBuildExample.html}Example of a Framework build}}
+
+
+* Building an App
+
+  Here is an example how to build an app: {{{./examples/AppBuildExample.html}Example of an App build}}
+ 
+* Providing settings and options
+
+  Xcode settings and options can be provided inside the configuration section of the xcode-maven-plugin.
+
++-------------
+
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0  http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>my.package</groupId>
+  <artifactId>MyLibrary</artifactId>
+  <version>1.0-SNAPSHOT</version>
+  <packaging>xcode-lib</packaging>
+
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>com.sap.prd.mobile.ios.mios</groupId>
+        <artifactId>xcode-maven-plugin</artifactId>
+        <version>${project.version}</version>
+        <extensions>true</extensions>
+        <configuration>
+          <options>
+            <optionKey>optionValue</optionKey>
+          </options>
+          <settings>
+            <settingsKey>settingsValue</settingsKey>
+          </settings>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>
+
++-------------
+
+  Some settings and options are managed by the plugin. Those settings and options cannot be provided inside the plugin configuration.
+
+  * Managed Settings
+
+    * <<<CODE_SIGN_IDENTITY>>> Can be provided from outside as property "xcode.codeSignIdentity"
+    
+    * <<<PROVISIONING_PROFILE>>> Can be provided from outside as property "xcode.provisioningProfile"
+    
+    * <<<DSTROOT>>> Is set to"build"
+    
+    * <<<SYMROOT>>> Is set to "build"
+    
+    * <<<SHARED_PRECOMPS_DIR>>> Is set to "build"
+    
+    * <<<OBJROOT>>> Is set to "build"
+
+  * Managed Options
+
+    * <<<project>>> Is always the maven artifactId
+
+    * <<<configuration>>> Can be provided as dedicated entry in the configuration section of the plugin. See pom.xml example above.
+
+    * <<<sdk>>> Can be provided as dedicated entry in the configuration section of the plugin. See pom.xml example above.
+
+    * <<<target>>> Can be provided as dedicated entry in the configuration section of the plugin. See pom.xml example above.
+
+    * <<<showBuildSettings>>> Not supported by the plugin.
+ 
+    * <<<dry-run>>> Not supported by the plugin.
+
+    * <<<showsdks>>> Not supported by the plugin.
+
+    * <<<version>>> Not supported by the plugin.
+
+    * <<<list>>> Not supported by the plugin.
+
+    * <<<usage>>> Not supported by the plugin.
+
+    * <<<help>>> Not supported by the plugin.
+
+    * <<<license>>> Not supported by the plugin.  
